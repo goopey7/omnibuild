@@ -37,8 +37,8 @@ impl mlua::FromLua for ModuleDirectory {
 }
 
 pub struct ProjectConfig {
-    project_name: String,
-    project_version: String,
-    build_targets: Vec<String>,
-    module_directories: Vec<ModuleDirectory>,
+    pub project_name: String,
+    pub project_version: String,
+    pub build_targets: Vec<String>,
+    pub module_directories: Vec<ModuleDirectory>,
 }
