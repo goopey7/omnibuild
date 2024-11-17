@@ -27,59 +27,66 @@ fn load_project(
     })
 }
 
+fn process_module(
+    args: &Cli,
+    module_path: Result<std::fs::DirEntry, std::io::Error>,
+    module_search_directory: &ModuleDirectory,
+) {
+    if module_path.is_err() {
+        return;
+    }
+    let module_path = module_path.unwrap();
+
+    if module_path.file_type().is_err() {
+        return;
+    }
+
+    if !module_path.file_type().unwrap().is_dir() {
+        return;
+    }
+
+    let module_directory_name = module_path
+        .file_name()
+        .into_string()
+        .expect("could not convert file_name to str");
+
+    let full_module_relative_path = args
+        .project_directory
+        .join(&module_search_directory.path)
+        .join(&module_directory_name);
+
+    println!("{:?}", &full_module_relative_path);
+
+    let module_file_read = std::fs::read_to_string(&full_module_relative_path.join("module.lua"))
+        .expect(
+            format!(
+                "{:?} is missing a module.lua file!",
+                &full_module_relative_path
+            )
+            .as_str(),
+        );
+
+    // TODO load module.lua
+}
+
+fn find_and_compile_modules(args: &Cli, loaded_project: &ProjectConfig) {
+    for module_search_directory in loaded_project.module_directories.as_slice() {
+        let module_list = std::fs::read_dir(
+            &args.project_directory.join(&module_search_directory.path),
+        )
+        .expect(format!("directory not found: {:?}", &module_search_directory.path).as_str());
+
+        for module_path in module_list {
+            process_module(args, module_path, module_search_directory);
+        }
+    }
+}
+
 fn main() {
     let args = Cli::parse();
     let lua = mlua::Lua::new();
-    let loaded_project = load_project(&args.directory, &lua).unwrap();
+    let loaded_project = load_project(&args.project_directory, &lua).unwrap();
 
     println!("Compiling {}...", &loaded_project.project_name);
-
-    // find modules
-    for module_search_directory in loaded_project.module_directories {
-        let module_list = std::fs::read_dir(&args.directory.join(&module_search_directory.path))
-            .expect(format!("directory not found: {}", &module_search_directory.path).as_str());
-
-        for module_path in module_list {
-            match module_path {
-                Ok(entry) => {
-                    match entry.file_type() {
-                        Ok(file_type) => {
-                            if !file_type.is_dir() {
-                                continue;
-                            }
-                        }
-                        Err(_) => {
-                            continue;
-                        }
-                    }
-
-                    let file_name = entry.file_name();
-                    let file_name_str = file_name
-                        .to_str()
-                        .expect("could not convert file_name to str");
-
-                    println!("{}/", file_name_str);
-
-                    let module_file_read = std::fs::read_to_string(format!(
-                        "{}/{}/{}/module.lua",
-                        &args.directory.to_str().unwrap(),
-                        &module_search_directory.path,
-                        file_name_str,
-                    ))
-                    .expect(
-                        format!(
-                            "{}/{}/{} is missing a module.lua file!",
-                            &args.directory.to_str().unwrap(),
-                            &module_search_directory.path,
-                            &file_name_str
-                        )
-                        .as_str(),
-                    );
-                }
-                Err(_) => {
-                    continue;
-                }
-            };
-        }
-    }
+    find_and_compile_modules(&args, &loaded_project);
 }

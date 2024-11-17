@@ -1,5 +1,5 @@
 pub struct ModuleDirectory {
-    pub path: String,
+    pub path: std::path::PathBuf,
     pub targets: Vec<String>,
 }
 

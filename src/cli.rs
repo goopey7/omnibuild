@@ -3,6 +3,10 @@
 #[command(version, about)]
 pub struct Cli {
     /// Directory containing project.lua
-    #[arg(short, long, default_value = ".")]
-    pub directory: std::path::PathBuf,
+    #[arg(name = "project-directory", short = 'i', long, default_value = ".")]
+    pub project_directory: std::path::PathBuf,
+
+    /// Output directory for build binaries
+    #[arg(name = "build-directory", short = 'o', long, default_value = "./build")]
+    pub build_directory: std::path::PathBuf,
 }
