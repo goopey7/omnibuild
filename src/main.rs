@@ -4,6 +4,7 @@ mod lua_configuration;
 use clap::Parser;
 use cli::Cli;
 use lua_configuration::project_config::{ModuleDirectory, ProjectConfig};
+use std::path::Path;
 
 fn load_project(
     project_directory: &std::path::PathBuf,
@@ -52,6 +53,7 @@ fn process_module(
 
     let full_module_relative_path = args
         .project_directory
+        .join("src")
         .join(&module_search_directory.path)
         .join(&module_directory_name);
 
@@ -72,7 +74,9 @@ fn process_module(
 fn find_and_compile_modules(args: &Cli, loaded_project: &ProjectConfig) {
     for module_search_directory in loaded_project.module_directories.as_slice() {
         let module_list = std::fs::read_dir(
-            &args.project_directory.join(&module_search_directory.path),
+            Path::new("src")
+                .join(&args.project_directory)
+                .join(&module_search_directory.path),
         )
         .expect(format!("directory not found: {:?}", &module_search_directory.path).as_str());
 
@@ -96,8 +100,8 @@ fn main() {
             );
             find_and_compile_modules(&args, &project);
         }
-        Err(e) => {
-            println!("{}", e);
+        Err(error) => {
+            println!("{}", error);
         }
     }
 }
