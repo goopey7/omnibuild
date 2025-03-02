@@ -85,8 +85,19 @@ fn find_and_compile_modules(args: &Cli, loaded_project: &ProjectConfig) {
 fn main() {
     let args = Cli::parse();
     let lua = mlua::Lua::new();
-    let loaded_project = load_project(&args.project_directory, &lua).unwrap();
+    let loaded_project = load_project(&args.project_directory, &lua);
 
-    println!("Compiling {}...", &loaded_project.project_name);
-    find_and_compile_modules(&args, &loaded_project);
+    match loaded_project {
+        Ok(project) => {
+            println!(
+                "Compiling {} to {}",
+                &project.project_name,
+                args.build_directory.to_str().unwrap()
+            );
+            find_and_compile_modules(&args, &project);
+        }
+        Err(e) => {
+            println!("{}", e);
+        }
+    }
 }
