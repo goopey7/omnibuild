@@ -27,7 +27,7 @@ impl mlua::FromLua for ModuleType {
 }
 
 pub struct ModuleConfig {
-    module_name: String,
+    module_name: Option<String>,
     module_type: ModuleType,
     dependencies: Vec<String>,
 }
