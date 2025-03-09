@@ -1,12 +1,15 @@
+use mlua::Lua;
+
 use crate::{
     cli::Cli,
+    load_lua_helpers::load_module,
     lua_configuration::{build_target_config::BuildTargetConfig, project_config::ProjectConfig},
 };
 use std::path::Path;
 
 pub fn find_and_compile_modules(
     args: &Cli,
-    lua: &mlua::Lua,
+    lua: &Lua,
     loaded_project: &ProjectConfig,
     build_target: &BuildTargetConfig,
 ) {
@@ -16,16 +19,29 @@ pub fn find_and_compile_modules(
                 .join(&args.project_directory)
                 .join(&module_search_directory),
         )
-        .expect(format!("directory not found: {:?}", &module_search_directory).as_str());
+        .expect(
+            format!(
+                "directory not found: {:?}",
+                &module_search_directory.to_str()
+            )
+            .as_str(),
+        );
 
         for module_path in module_list {
-            process_module(args, module_search_directory, module_path, build_target);
+            process_module(
+                args,
+                lua,
+                module_search_directory,
+                module_path,
+                build_target,
+            );
         }
     }
 }
 
 fn process_module(
     args: &Cli,
+    lua: &Lua,
     module_search_directory: &std::path::PathBuf,
     module_path: Result<std::fs::DirEntry, std::io::Error>,
     build_target: &BuildTargetConfig,
@@ -56,14 +72,5 @@ fn process_module(
 
     println!("{:?}", &full_module_relative_path);
 
-    let module_file_read = std::fs::read_to_string(&full_module_relative_path.join("module.lua"))
-        .expect(
-            format!(
-                "{:?} is missing a module.lua file!",
-                &full_module_relative_path
-            )
-            .as_str(),
-        );
-
-    // TODO load module.lua
+    let module = load_module(&full_module_relative_path, lua);
 }

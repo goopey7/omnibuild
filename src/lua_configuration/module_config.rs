@@ -1,4 +1,4 @@
-enum ModuleType {
+pub enum ModuleType {
     Dylib,
     Lib,
     Exe,
@@ -27,7 +27,26 @@ impl mlua::FromLua for ModuleType {
 }
 
 pub struct ModuleConfig {
-    module_name: Option<String>,
-    module_type: ModuleType,
-    dependencies: Vec<String>,
+    pub name: String,
+    pub r#type: ModuleType,
+    pub dependencies: Vec<String>,
+    pub include_dirs: Vec<String>,
+}
+
+impl mlua::FromLua for ModuleConfig {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> Result<Self, mlua::Error> {
+        match value.as_table() {
+            Some(value) => Ok(ModuleConfig {
+                name: value.get("name")?,
+                r#type: value.get("type")?,
+                dependencies: value.get("dependencies")?,
+                include_dirs: value.get("include_dirs")?,
+            }),
+            None => Err(mlua::Error::FromLuaConversionError {
+                from: "table",
+                to: "ModuleConfig".to_string(),
+                message: None,
+            }),
+        }
+    }
 }
