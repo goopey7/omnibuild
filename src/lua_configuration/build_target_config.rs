@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct BuildTargetConfig {
     pub name: String,
     pub module_directories: Vec<std::path::PathBuf>,

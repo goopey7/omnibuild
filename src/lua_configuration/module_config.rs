@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum ModuleType {
     Dylib,
     Lib,
@@ -26,6 +27,7 @@ impl mlua::FromLua for ModuleType {
     }
 }
 
+#[derive(Debug)]
 pub struct ModuleConfig {
     pub name: String,
     pub r#type: ModuleType,
