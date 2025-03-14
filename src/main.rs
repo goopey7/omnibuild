@@ -1,7 +1,6 @@
 mod build_modules;
 mod cli;
 mod load_lua_helpers;
-mod lua_api;
 mod lua_configuration;
 
 use clap::Parser;
