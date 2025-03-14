@@ -3,48 +3,83 @@ use super::{
     project_config::ProjectConfig, target_configuration_config::BuildConfig,
 };
 
+pub fn add_lua_function<
+    F: Fn(&mlua::Lua, A) -> Result<R, mlua::Error> + mlua::MaybeSend + 'static,
+    A: mlua::FromLuaMulti,
+    R: mlua::IntoLuaMulti,
+>(
+    lua: &mlua::Lua,
+    name: &str,
+    f: F,
+) -> Result<(), mlua::Error> {
+    let lua_func = lua.create_function(f)?;
+    lua.globals()
+        .get::<mlua::Table>("ob")?
+        .set(name, lua_func)?;
+    Ok(())
+}
+
 pub fn init_globals(lua: &mlua::Lua) -> Result<(), mlua::Error> {
     let ob_table = lua.create_table()?;
+    lua.globals().set("ob", ob_table)?;
 
-    let set_project = lua.create_function(|_, project: ProjectConfig| {
-        println!("added project {:?}", project);
-        Ok(())
-    })?;
-    ob_table.set("set_project", set_project);
+    add_lua_function(
+        lua,
+        "set_project",
+        |_: &mlua::Lua, project: ProjectConfig| -> Result<(), mlua::Error> {
+            println!("added project {:?}", project);
+            Ok(())
+        },
+    )?;
 
-    let add_module = lua.create_function(|_, module: ModuleConfig| {
-        println!("added module {:?}", module);
-        Ok(())
-    })?;
-    ob_table.set("add_module", add_module);
+    add_lua_function(
+        lua,
+        "add_module",
+        |_: &mlua::Lua, module: ModuleConfig| -> Result<(), mlua::Error> {
+            println!("added module {:?}", module);
+            Ok(())
+        },
+    )?;
 
-    let add_config = lua.create_function(|_, target: BuildConfig| {
-        println!("added build config {:?}", target);
-        Ok(())
-    })?;
-    ob_table.set("add_config", add_config);
+    add_lua_function(
+        lua,
+        "add_config",
+        |_: &mlua::Lua, target: BuildConfig| -> Result<(), mlua::Error> {
+            println!("added build config {:?}", target);
+            Ok(())
+        },
+    )?;
 
-    let add_target = lua.create_function(|_, target: BuildTargetConfig| {
-        println!("added build target {:?}", target);
-        Ok(())
-    })?;
-    ob_table.set("add_target", add_target);
+    add_lua_function(
+        lua,
+        "add_target",
+        |_: &mlua::Lua, target: BuildTargetConfig| -> Result<(), mlua::Error> {
+            println!("added build target {:?}", target);
+            Ok(())
+        },
+    )?;
 
-    let is_windows = lua.create_function(|_, ()| Ok(cfg!(windows)))?;
-    ob_table.set("is_windows", is_windows);
+    add_lua_function(
+        lua,
+        "is_windows",
+        |_: &mlua::Lua, ()| -> Result<bool, mlua::Error> { Ok(cfg!(windows)) },
+    )?;
 
-    let is_unix = lua.create_function(|_, ()| Ok(cfg!(unix)))?;
-    ob_table.set("is_unix", is_unix);
+    add_lua_function(
+        lua,
+        "is_unix",
+        |_: &mlua::Lua, ()| -> Result<bool, mlua::Error> { Ok(cfg!(unix)) },
+    )?;
 
-    let is_macos = lua.create_function(|_, ()| Ok(cfg!(target_os = "macos")))?;
-    ob_table.set("is_macos", is_macos);
+    add_lua_function(
+        lua,
+        "is_macos",
+        |_: &mlua::Lua, ()| -> Result<bool, mlua::Error> { Ok(cfg!(target_os = "macos")) },
+    )?;
 
-    let print = lua.create_function(|_, str: String| {
+    add_lua_function(lua, "print", |_, str: String| -> Result<(), mlua::Error> {
         println!("{}", str);
         Ok(())
     })?;
-    ob_table.set("print", print);
-
-    lua.globals().set("ob", ob_table)?;
     Ok(())
 }
