@@ -1,7 +1,7 @@
 use mlua::Lua;
 use std::path::PathBuf;
 
-use crate::lua_configuration::module_config::{ModuleConfig, ModuleType};
+use crate::lua::config::module_config::{ModuleConfig, ModuleType};
 
 pub fn load_module(module_path: &PathBuf, api: &Lua) -> Result<ModuleConfig, mlua::Error> {
     let module_file_read = std::fs::read_to_string(&module_path.join("module.lua"))
