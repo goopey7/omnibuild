@@ -1,2 +1,4 @@
 /target
 macros/target
+example/build/*
+!example/build/Makefile
