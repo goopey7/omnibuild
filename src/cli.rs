@@ -14,7 +14,7 @@ pub struct Cli {
     #[arg(name = "build-target", short = 't', long)]
     pub build_target: String,
 
-    /// Target config to compile
-    #[arg(name = "target-configuration", short = 'c', long)]
-    pub target_configuration: String,
+    /// build config to compile (Debug, Release)
+    #[arg(name = "config", short = 'c', long)]
+    pub build_config: String,
 }
