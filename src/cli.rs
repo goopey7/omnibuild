@@ -17,4 +17,8 @@ pub struct Cli {
     /// build config to compile (Debug, Release)
     #[arg(name = "config", short = 'c', long)]
     pub build_config: String,
+
+    /// build file to output (make, vs)
+    #[arg(name = "file", short = 'f', long)]
+    pub build_file: String,
 }

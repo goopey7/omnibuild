@@ -38,7 +38,3 @@ pub fn add_target(_lua: &mlua::Lua, target: super::config::build_target_config::
     build_state!().targets.push(target);
     println!("added build target {:?}", build_state!().targets.last());
 }
-
-pub fn build(lua: &mlua::Lua, path: String) {
-    crate::build::build::build(lua, path);
-}

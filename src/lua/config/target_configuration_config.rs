@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BuildConfig {
     name: String,
     optimization_level: u8,
