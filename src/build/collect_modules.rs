@@ -13,6 +13,7 @@ pub fn collect_modules(lua: &mlua::Lua, args: &Cli) -> Result<(), mlua::Error>
             if let Ok(entry) = entry {
                 let module_file_read = std::fs::read_to_string(format!("{}/module.lua", entry.path().to_str().expect("path is invalid unicode"))).expect("no module.lua found!");
                 lua.load(module_file_read).exec().expect("failed to execute module.lua");
+                build_state!().modules.last_mut().expect(format!("module was not added! Missing call to ob.add_module() in {}", entry.path().to_str().unwrap_or("")).as_str()).path = Some(entry.path());
             }
         }
     });

@@ -18,5 +18,6 @@ pub fn load_module(module_path: &PathBuf, api: &Lua) -> Result<ModuleConfig, mlu
         r#type,
         dependencies,
         include_dirs,
+        path: None,
     })
 }

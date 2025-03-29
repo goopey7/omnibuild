@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 #[derive(Debug, Clone)]
 pub enum ModuleType {
     Dylib,
@@ -33,6 +35,7 @@ pub struct ModuleConfig {
     pub r#type: ModuleType,
     pub dependencies: Vec<String>,
     pub include_dirs: Vec<String>,
+    pub path: Option<PathBuf>,
 }
 
 impl mlua::FromLua for ModuleConfig {
@@ -43,6 +46,7 @@ impl mlua::FromLua for ModuleConfig {
                 r#type: value.get("type")?,
                 dependencies: value.get("dependencies")?,
                 include_dirs: value.get("include_dirs")?,
+                path: None,
             }),
             None => Err(mlua::Error::FromLuaConversionError {
                 from: "table",
