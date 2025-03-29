@@ -22,9 +22,9 @@ pub fn add_lua_functions(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
     let mut token_output = quote![];
     for sig in signatures {
         let ident = sig.ident;
-        let mut inputs: Vec<syn::FnArg> = sig.inputs.into_iter().collect();
+        let inputs: Vec<syn::FnArg> = sig.inputs.into_iter().collect();
 
-        let mut input_names: Vec<_> = inputs
+        let input_names: Vec<_> = inputs
             .iter()
             .filter_map(|input| {
                 if let syn::FnArg::Typed(pat_type) = input {

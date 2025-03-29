@@ -1,7 +1,7 @@
 local module = {
 	name = "ServerExecutable",
 	type = "exe",
-	dependencies = { "DynamicLibModule", "StaticLibModule" },
+	dependencies = { "RuntimeStaticLib", "RuntimeDynamicLib" },
 	include_dirs = { "public" },
 }
 

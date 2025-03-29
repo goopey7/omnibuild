@@ -1,10 +1,12 @@
 mod build;
 mod cli;
+mod compiler;
 mod lua;
 
-use build::{build::configure, collect_modules::collect_modules};
+use build::{build::build, collect_modules::collect_modules};
 use clap::Parser;
 use cli::Cli;
+use compiler::gcc::Gcc;
 use lua::init_globals::init_globals;
 
 fn main() -> Result<(), mlua::Error> {
@@ -20,7 +22,7 @@ fn main() -> Result<(), mlua::Error> {
 
     collect_modules(&lua, &args)?;
 
-    configure(&lua, &args);
+    build::<Gcc>(&args);
 
     Ok(())
 }

@@ -18,7 +18,7 @@ local common_config = {
 }
 
 local debug_config = common_config
-ob.print(debug_config.cpp_standard)
+ob.print("cpp standard: " .. debug_config.cpp_standard)
 debug_config.name = "debug"
 debug_config.debug_info = true
 debug_config.optimization = "None"

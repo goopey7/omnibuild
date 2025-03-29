@@ -6,6 +6,7 @@ pub enum CppStandard {
     Cpp20,
     Cpp23,
 }
+
 impl Default for CppStandard {
     fn default() -> Self {
         CppStandard::Cpp20
@@ -30,6 +31,20 @@ impl mlua::FromLua for CppStandard {
                 _ => error,
             },
             None => error,
+        }
+    }
+}
+
+impl Into<u8> for CppStandard
+{
+    fn into(self) -> u8 {
+        match self
+        {
+            Self::Cpp11 => 11,
+            Self::Cpp14 => 14,
+            Self::Cpp17 => 17,
+            Self::Cpp20 => 20,
+            Self::Cpp23 => 23,
         }
     }
 }
@@ -84,6 +99,7 @@ pub enum Optimization {
     Size,
     Speed,
     MaxSpeed,
+    MaxSize,
 }
 
 impl mlua::FromLua for Optimization {
@@ -100,6 +116,7 @@ impl mlua::FromLua for Optimization {
                 "Size" => Ok(Optimization::Size),
                 "Speed" => Ok(Optimization::Speed),
                 "MaxSpeed" => Ok(Optimization::MaxSpeed),
+                "MaxSize" => Ok(Optimization::MaxSize),
                 &_ => error,
             },
             None => error,
@@ -109,12 +126,12 @@ impl mlua::FromLua for Optimization {
 
 #[derive(Debug, Clone)]
 pub struct BuildConfig {
-    name: String,
-    debug_info: bool,
-    cpp_standard: CppStandard,
-    warnings_as_errors: bool,
-    warnings: Vec<CppWarning>,
-    optimization: Optimization,
+    pub name: String,
+    pub debug_info: bool,
+    pub cpp_standard: CppStandard,
+    pub warnings_as_errors: bool,
+    pub warnings: Vec<CppWarning>,
+    pub optimization: Optimization,
 }
 
 impl mlua::FromLua for BuildConfig {
