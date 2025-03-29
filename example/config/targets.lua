@@ -3,7 +3,8 @@ local client_target = {
 	module_directories = {
 		"src/runtime",
 		"src/client",
-	}
+	},
+	output_dir = "bin/client",
 }
 ob.add_target(client_target)
 
@@ -16,6 +17,7 @@ local server_target = {
 	definitions = {
 	  IS_SERVER = 1,
 	},
+	output_dir = "bin/server",
 }
 ob.add_target(server_target)
 
@@ -26,6 +28,7 @@ local editor_target = {
 		"src/editor",
 		"src/client",
 		"src/server",
-	}
+	},
+	output_dir = "bin/editor",
 }
 ob.add_target(editor_target)
