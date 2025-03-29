@@ -8,7 +8,7 @@ use crate::{
     build::build_state::BUILD_STATE,
     lua::config::{
         build_config::{BuildConfig, CppWarning, Optimization},
-        module_config::ModuleConfig,
+        module_config::{ModuleConfig, ModuleType},
         target_config::TargetConfig,
     },
 };
@@ -82,6 +82,14 @@ impl Compiler for Gcc {
 
         if build_config.debug_info {
             cmd.arg(Gcc::get_debug_symbols());
+        }
+
+        match module.r#type
+        {
+            ModuleType::Dylib => {
+                cmd.arg("-fPIC");
+            }
+            _ => {},
         }
 
         cmd.arg(Gcc::input_src_file_prefix());
