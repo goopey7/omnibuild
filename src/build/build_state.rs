@@ -1,6 +1,6 @@
 use std::sync::RwLock;
 
-use crate::lua::config::{build_target_config::BuildTargetConfig, module_config::ModuleConfig, project_config::ProjectConfig, target_configuration_config::BuildConfig};
+use crate::lua::config::{target_config::TargetConfig, module_config::ModuleConfig, project_config::ProjectConfig, build_config::BuildConfig};
 use lazy_static::lazy_static;
 
 #[derive(Default, Clone)]
@@ -9,7 +9,7 @@ pub struct BuildState
     pub project: Option<ProjectConfig>,
     pub modules: Vec<ModuleConfig>,
     pub configs: Vec<BuildConfig>,
-    pub targets: Vec<BuildTargetConfig>,
+    pub targets: Vec<TargetConfig>,
 }
 
 lazy_static! {

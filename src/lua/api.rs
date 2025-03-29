@@ -28,13 +28,13 @@ pub fn add_module(_lua: &mlua::Lua, module: super::config::module_config::Module
 
 pub fn add_config(
     _lua: &mlua::Lua,
-    config: super::config::target_configuration_config::BuildConfig,
+    config: super::config::build_config::BuildConfig,
 ) {
     build_state!().configs.push(config);
     println!("added build config {:?}", build_state!().configs.last());
 }
 
-pub fn add_target(_lua: &mlua::Lua, target: super::config::build_target_config::BuildTargetConfig) {
+pub fn add_target(_lua: &mlua::Lua, target: super::config::target_config::TargetConfig) {
     build_state!().targets.push(target);
     println!("added build target {:?}", build_state!().targets.last());
 }
