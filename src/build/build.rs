@@ -44,9 +44,11 @@ pub fn build<T: Compiler>(args: &Cli) {
         .try_read()
         .expect("failed to get read on build_state");
 
-    if let Some(project) = &build_state.project
-    {
-        println!("Building {} {}", project.project_name, project.project_version);
+    if let Some(project) = &build_state.project {
+        println!(
+            "Building {} {}",
+            project.project_name, project.project_version
+        );
     }
 
     let target = build_state
@@ -61,24 +63,13 @@ pub fn build<T: Compiler>(args: &Cli) {
         .find(|build_config| build_config.name == args.build_config);
     let build_config = build_config.expect("provided build configuration not found!");
 
-    let output_dir = target
-        .output_dir
-        .to_str()
-        .expect("could not convert output path to string")
-        .to_owned();
     build_state.modules.iter().for_each(|module| {
-        let path = module.path.clone().expect("module path not found!");
-        let path = path
-            .to_str()
-            .expect("could not convert module path to string")
-            .to_owned();
-        let path = format!("{}/{}", output_dir, path);
-
-
         let mut files = vec![];
-        gather_cpp_files(Path::new(&module.path.as_ref().unwrap().clone()), &mut files);
+        gather_cpp_files(
+            Path::new(&module.path.as_ref().unwrap().clone()),
+            &mut files,
+        );
 
-        println!("building {} to {}", module.name, path);
         files.iter().for_each(|file| {
             T::compile(module, &target, &build_config, file);
         });
