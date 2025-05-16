@@ -1,5 +1,10 @@
 use std::{
-    collections::HashSet, fs::{File, OpenOptions}, hash::Hasher, io::{BufReader, Read, Write}, path::{Path, PathBuf}, process::Command
+    collections::HashSet,
+    fs::{File, OpenOptions},
+    hash::Hasher,
+    io::{BufReader, Read, Write},
+    path::{Path, PathBuf},
+    process::Command,
 };
 
 use regex::Regex;
@@ -194,14 +199,54 @@ impl Compiler for Gcc {
             ModuleType::Exe => output_dir.join(&module.name),
         };
 
+        fn collect_transitive_deps(
+            name: &str,
+            build_state: &BuildState,
+            visited: &mut HashSet<String>,
+            static_libs: &mut Vec<PathBuf>,
+            dynamic_libs: &mut Vec<String>,
+            output_dir: &Path,
+        ) {
+            if !visited.insert(name.to_string()) {
+                return;
+            }
+
+            let dep = build_state
+                .modules
+                .iter()
+                .find(|m| m.name == name)
+                .expect("missing dep");
+
+            for dep_name in &dep.dependencies {
+                collect_transitive_deps(
+                    dep_name,
+                    build_state,
+                    visited,
+                    static_libs,
+                    dynamic_libs,
+                    output_dir,
+                );
+            }
+
+            match dep.r#type {
+                ModuleType::Lib => {
+                    static_libs.push(output_dir.join(format!("lib{}.a", dep.name)));
+                }
+                ModuleType::Dylib => {
+                    dynamic_libs.push(dep.name.clone());
+                }
+                _ => {}
+            }
+        }
+
         match module.r#type {
             ModuleType::Lib => {
                 let mut cmd = Command::new("ar");
                 cmd.arg("rcs");
                 cmd.arg(&output_path);
-                object_files.iter().for_each(|obj| {
+                for obj in &object_files {
                     cmd.arg(obj);
-                });
+                }
 
                 println!("Linking staticlib: {:?}", cmd);
                 cmd.status().expect("Failed to link static library");
@@ -210,68 +255,14 @@ impl Compiler for Gcc {
             ModuleType::Dylib => {
                 let mut cmd = Command::new("g++");
                 cmd.arg("-shared").arg("-fPIC");
-
-                for obj in &object_files {
-                    cmd.arg(obj);
-                }
-
-                cmd.arg("-o").arg(&output_path);
-
-                println!("Linking sharedlib: {:?}", cmd);
-                cmd.status().expect("Failed to link shared library");
-            }
-            ModuleType::Exe => {
-                let mut cmd = Command::new("g++");
                 cmd.args(&object_files);
 
-                // Recursively collect all dependencies
                 let mut visited = HashSet::new();
                 let mut static_libs = Vec::new();
                 let mut dynamic_libs = Vec::new();
 
-                fn collect_deps(
-                    name: &str,
-                    build_state: &BuildState,
-                    visited: &mut HashSet<String>,
-                    static_libs: &mut Vec<PathBuf>,
-                    dynamic_libs: &mut Vec<String>,
-                    output_dir: &Path,
-                ) {
-                    if !visited.insert(name.to_string()) {
-                        return;
-                    }
-
-                    let dep = build_state
-                        .modules
-                        .iter()
-                        .find(|m| m.name == name)
-                        .expect("missing dep");
-
-                    for dep_name in &dep.dependencies {
-                        collect_deps(
-                            dep_name,
-                            build_state,
-                            visited,
-                            static_libs,
-                            dynamic_libs,
-                            output_dir,
-                        );
-                    }
-
-                    match dep.r#type {
-                        ModuleType::Lib => {
-                            let lib_path = output_dir.join(format!("lib{}.a", dep.name));
-                            static_libs.push(lib_path);
-                        }
-                        ModuleType::Dylib => {
-                            dynamic_libs.push(dep.name.clone());
-                        }
-                        _ => {}
-                    }
-                }
-
                 for dep_name in &module.dependencies {
-                    collect_deps(
+                    collect_transitive_deps(
                         dep_name,
                         &build_state,
                         &mut visited,
@@ -281,12 +272,46 @@ impl Compiler for Gcc {
                     );
                 }
 
-                // Add static libs (full paths)
                 for lib in &static_libs {
                     cmd.arg(lib);
                 }
 
-                // Add dynamic libs with -L, -l, -rpath
+                if !dynamic_libs.is_empty() {
+                    cmd.arg(format!("-L{}", output_dir.display()));
+                    for lib in &dynamic_libs {
+                        cmd.arg(format!("-l{}", lib));
+                    }
+                    cmd.arg(format!("-Wl,-rpath,{}", output_dir.display()));
+                }
+
+                cmd.arg("-o").arg(&output_path);
+                println!("Linking sharedlib: {:?}", cmd);
+                cmd.status().expect("Failed to link shared library");
+            }
+
+            ModuleType::Exe => {
+                let mut cmd = Command::new("g++");
+                cmd.args(&object_files);
+
+                let mut visited = HashSet::new();
+                let mut static_libs = Vec::new();
+                let mut dynamic_libs = Vec::new();
+
+                for dep_name in &module.dependencies {
+                    collect_transitive_deps(
+                        dep_name,
+                        &build_state,
+                        &mut visited,
+                        &mut static_libs,
+                        &mut dynamic_libs,
+                        &output_dir,
+                    );
+                }
+
+                for lib in &static_libs {
+                    cmd.arg(lib);
+                }
+
                 if !dynamic_libs.is_empty() {
                     cmd.arg(format!("-L{}", output_dir.display()));
                     for lib in &dynamic_libs {
