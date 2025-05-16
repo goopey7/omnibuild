@@ -9,11 +9,7 @@ pub trait Compiler {
     fn get_standard_prefix() -> &'static str;
     fn get_warning(warning: &CppWarning) -> &'static str;
     fn get_warnings_as_errors() -> &'static str;
-    fn get_staticlib_flags() -> &'static str;
-    fn get_dylib_flags() -> &'static str;
-    fn get_exe_flags() -> &'static str;
     fn get_include_dir_prefix() -> &'static str;
-    fn get_lib_prefix() -> &'static str;
     fn get_optimization(optimization: &Optimization) -> &'static str;
     fn get_definition_prefix() -> &'static str;
     fn input_src_file_prefix() -> &'static str;
