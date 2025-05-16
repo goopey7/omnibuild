@@ -1,9 +1,5 @@
 use std::{
-    fs::{File, OpenOptions},
-    hash::Hasher,
-    io::{BufReader, Read, Write},
-    path::{Path, PathBuf},
-    process::Command,
+    collections::HashSet, fs::{File, OpenOptions}, hash::Hasher, io::{BufReader, Read, Write}, path::{Path, PathBuf}, process::Command
 };
 
 use regex::Regex;
@@ -11,7 +7,7 @@ use twox_hash::XxHash3_64;
 
 use super::compiler::Compiler;
 use crate::{
-    build::build_state::BUILD_STATE,
+    build::build_state::{BuildState, BUILD_STATE},
     compiler::inc_build_cache::{IncBuildDependency, IncBuildFile},
     lua::config::{
         build_config::{BuildConfig, CppWarning, Optimization},
@@ -166,7 +162,7 @@ impl Compiler for Gcc {
 
         let mut should_compile = true;
 
-        let new_cache_state = get_inc_build_file(module, &file, &target_config.output_dir);
+        let new_cache_state = get_inc_build_file(module, &file);
         if let Some(file) = get_inc_build_cache_state(&file, &target_config.output_dir) {
             let dependencies_match = file
                 .dependencies
@@ -176,9 +172,136 @@ impl Compiler for Gcc {
         }
 
         if should_compile {
+            println!("{:?}", &cmd);
             cmd.status().unwrap();
         }
         update_inc_build_cache(&module, &file, &target_config.output_dir);
+    }
+
+    fn link_module(
+        module: &ModuleConfig,
+        target_config: &TargetConfig,
+        object_files: Vec<PathBuf>,
+    ) {
+        let build_state = BUILD_STATE
+            .try_read()
+            .expect("failed to get read on build_state");
+
+        let output_dir = target_config.output_dir.clone();
+        let output_path = match module.r#type {
+            ModuleType::Lib => output_dir.join(format!("lib{}.a", module.name)),
+            ModuleType::Dylib => output_dir.join(format!("lib{}.so", module.name)),
+            ModuleType::Exe => output_dir.join(&module.name),
+        };
+
+        match module.r#type {
+            ModuleType::Lib => {
+                let mut cmd = Command::new("ar");
+                cmd.arg("rcs");
+                cmd.arg(&output_path);
+                object_files.iter().for_each(|obj| {
+                    cmd.arg(obj);
+                });
+
+                println!("Linking staticlib: {:?}", cmd);
+                cmd.status().expect("Failed to link static library");
+            }
+
+            ModuleType::Dylib => {
+                let mut cmd = Command::new("g++");
+                cmd.arg("-shared").arg("-fPIC");
+
+                for obj in &object_files {
+                    cmd.arg(obj);
+                }
+
+                cmd.arg("-o").arg(&output_path);
+
+                println!("Linking sharedlib: {:?}", cmd);
+                cmd.status().expect("Failed to link shared library");
+            }
+            ModuleType::Exe => {
+                let mut cmd = Command::new("g++");
+                cmd.args(&object_files);
+
+                // Recursively collect all dependencies
+                let mut visited = HashSet::new();
+                let mut static_libs = Vec::new();
+                let mut dynamic_libs = Vec::new();
+
+                fn collect_deps(
+                    name: &str,
+                    build_state: &BuildState,
+                    visited: &mut HashSet<String>,
+                    static_libs: &mut Vec<PathBuf>,
+                    dynamic_libs: &mut Vec<String>,
+                    output_dir: &Path,
+                ) {
+                    if !visited.insert(name.to_string()) {
+                        return;
+                    }
+
+                    let dep = build_state
+                        .modules
+                        .iter()
+                        .find(|m| m.name == name)
+                        .expect("missing dep");
+
+                    for dep_name in &dep.dependencies {
+                        collect_deps(
+                            dep_name,
+                            build_state,
+                            visited,
+                            static_libs,
+                            dynamic_libs,
+                            output_dir,
+                        );
+                    }
+
+                    match dep.r#type {
+                        ModuleType::Lib => {
+                            let lib_path = output_dir.join(format!("lib{}.a", dep.name));
+                            static_libs.push(lib_path);
+                        }
+                        ModuleType::Dylib => {
+                            dynamic_libs.push(dep.name.clone());
+                        }
+                        _ => {}
+                    }
+                }
+
+                for dep_name in &module.dependencies {
+                    collect_deps(
+                        dep_name,
+                        &build_state,
+                        &mut visited,
+                        &mut static_libs,
+                        &mut dynamic_libs,
+                        &output_dir,
+                    );
+                }
+
+                // Add static libs (full paths)
+                for lib in &static_libs {
+                    cmd.arg(lib);
+                }
+
+                // Add dynamic libs with -L, -l, -rpath
+                if !dynamic_libs.is_empty() {
+                    cmd.arg(format!("-L{}", output_dir.display()));
+                    for lib in &dynamic_libs {
+                        cmd.arg(format!("-l{}", lib));
+                    }
+                    cmd.arg(format!("-Wl,-rpath,{}", output_dir.display()));
+                }
+
+                cmd.arg("-o").arg(&output_path);
+                println!("Linking executable: {:?}", cmd);
+                cmd.status().expect("Failed to link executable");
+            }
+        }
+
+        println!("Output written to: {}", output_path.display());
     }
 
     fn get_warning(warning: &CppWarning) -> &'static str {
@@ -277,11 +400,7 @@ fn get_inc_build_cache_state(o_file: &PathBuf, output_dir: &PathBuf) -> Option<I
     }
 }
 
-fn get_inc_build_file(
-    module: &ModuleConfig,
-    file: &PathBuf,
-    output_dir: &PathBuf,
-) -> IncBuildFile {
+fn get_inc_build_file(module: &ModuleConfig, file: &PathBuf) -> IncBuildFile {
     let build_state = BUILD_STATE
         .try_read()
         .expect("failed to get read on build_state");
@@ -327,11 +446,7 @@ fn get_inc_build_file(
     }
 }
 
-fn update_inc_build_cache(
-    module: &ModuleConfig,
-    file: &PathBuf,
-    output_dir: &PathBuf,
-) {
+fn update_inc_build_cache(module: &ModuleConfig, file: &PathBuf, output_dir: &PathBuf) {
     let build_state = BUILD_STATE
         .try_read()
         .expect("failed to get read on build_state");

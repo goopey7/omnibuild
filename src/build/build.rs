@@ -73,5 +73,14 @@ pub fn build<T: Compiler>(args: &Cli) {
         files.iter().for_each(|file| {
             T::compile(module, &target, &build_config, file);
         });
+        let object_files: Vec<PathBuf> = files
+            .iter()
+            .map(|f| {
+                let mut o = f.clone();
+                o.set_extension("o");
+                target.output_dir.join(o)
+            })
+            .collect();
+        T::link_module(module, target, object_files);
     });
 }

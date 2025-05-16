@@ -4,6 +4,7 @@ use crate::lua::config::{build_config::{BuildConfig, CppWarning, Optimization}, 
 
 pub trait Compiler {
     fn compile(module: &ModuleConfig, target_config: &TargetConfig, build_config: &BuildConfig, file: &PathBuf);
+    fn link_module(module: &ModuleConfig, target_config: &TargetConfig, object_files: Vec<PathBuf>);
     fn get_debug_symbols() -> &'static str;
     fn get_standard_prefix() -> &'static str;
     fn get_warning(warning: &CppWarning) -> &'static str;
