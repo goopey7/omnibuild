@@ -2,3 +2,5 @@
 macros/target
 example/build/*
 !example/build/Makefile
+example/.cache/clangd/index
+example/compile_commands.json

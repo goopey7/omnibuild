@@ -63,6 +63,7 @@ pub fn build<T: Compiler>(args: &Cli) {
         .find(|build_config| build_config.name == args.build_config);
     let build_config = build_config.expect("provided build configuration not found!");
 
+    let mut compile_commands = vec![];
     build_state.modules.iter().for_each(|module| {
         let mut files = vec![];
         gather_cpp_files(
@@ -71,7 +72,8 @@ pub fn build<T: Compiler>(args: &Cli) {
         );
 
         files.iter().for_each(|file| {
-            T::compile(module, &target, &build_config, file);
+            let compile_command = T::compile(module, &target, &build_config, file);
+            compile_commands.push(compile_command);
         });
         let object_files: Vec<PathBuf> = files
             .iter()
@@ -83,4 +85,11 @@ pub fn build<T: Compiler>(args: &Cli) {
             .collect();
         T::link_module(module, target, object_files);
     });
+    let compile_commands_json = serde_json::to_string_pretty(&compile_commands)
+        .expect("unable to serialize compile commands to json!");
+    std::fs::write(
+        "compile_commands.json",
+        compile_commands_json,
+    )
+    .expect("failed to write compile_commands.json!");
 }

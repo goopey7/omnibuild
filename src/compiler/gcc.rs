@@ -10,7 +10,10 @@ use std::{
 use regex::Regex;
 use twox_hash::XxHash3_64;
 
-use super::compiler::Compiler;
+use super::{
+    clangd::CompileCommand,
+    compiler::{stringify_command, Compiler},
+};
 use crate::{
     build::build_state::{BuildState, BUILD_STATE},
     compiler::inc_build_cache::{IncBuildDependency, IncBuildFile},
@@ -71,7 +74,7 @@ impl Compiler for Gcc {
         target_config: &TargetConfig,
         build_config: &BuildConfig,
         file: &PathBuf,
-    ) {
+    ) -> CompileCommand {
         let build_state = BUILD_STATE
             .try_read()
             .expect("failed to get read on build_state");
@@ -177,10 +180,16 @@ impl Compiler for Gcc {
         }
 
         if should_compile {
-            println!("{:?}", &cmd);
             cmd.status().unwrap();
         }
         update_inc_build_cache(&module, &file, &target_config.output_dir);
+
+        let directory = std::env::current_dir().unwrap();
+        CompileCommand {
+            directory: directory.to_string_lossy().to_string(),
+            command: stringify_command(&cmd),
+            file: directory.join(file).to_string_lossy().to_string(),
+        }
     }
 
     fn link_module(
@@ -248,7 +257,6 @@ impl Compiler for Gcc {
                     cmd.arg(obj);
                 }
 
-                println!("Linking staticlib: {:?}", cmd);
                 cmd.status().expect("Failed to link static library");
             }
 
@@ -285,7 +293,6 @@ impl Compiler for Gcc {
                 }
 
                 cmd.arg("-o").arg(&output_path);
-                println!("Linking sharedlib: {:?}", cmd);
                 cmd.status().expect("Failed to link shared library");
             }
 
@@ -321,7 +328,6 @@ impl Compiler for Gcc {
                 }
 
                 cmd.arg("-o").arg(&output_path);
-                println!("Linking executable: {:?}", cmd);
                 cmd.status().expect("Failed to link executable");
             }
         }
