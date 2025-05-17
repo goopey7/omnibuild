@@ -24,13 +24,21 @@ pub fn add_module(_lua: &mlua::Lua, module: super::config::module_config::Module
     build_state!().modules.push(module);
 }
 
-pub fn add_config(
-    _lua: &mlua::Lua,
-    config: super::config::build_config::BuildConfig,
-) {
+pub fn add_config(_lua: &mlua::Lua, config: super::config::build_config::BuildConfig) {
     build_state!().configs.push(config);
 }
 
 pub fn add_target(_lua: &mlua::Lua, target: super::config::target_config::TargetConfig) {
     build_state!().targets.push(target);
+}
+
+pub fn cmd(_lua: &mlua::Lua, cmd: Vec<String>) {
+    if cmd.is_empty()
+    {
+        return;
+    }
+    std::process::Command::new(cmd.first().unwrap())
+        .args(&cmd[1..])
+        .status()
+        .unwrap();
 }
