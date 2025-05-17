@@ -23,7 +23,6 @@ pub fn add_lua_functions(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
     for sig in signatures {
         let ident = sig.ident;
         let inputs: Vec<syn::FnArg> = sig.inputs.into_iter().collect();
-
         let input_names: Vec<_> = inputs
             .iter()
             .filter_map(|input| {
@@ -38,6 +37,16 @@ pub fn add_lua_functions(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
                 }
             })
             .collect();
+        let input_types: Vec<_> = inputs
+            .iter()
+            .filter_map(|input| {
+                if let syn::FnArg::Typed(pat_type) = input {
+                    Some(pat_type.ty.to_token_stream())
+                } else {
+                    None
+                }
+            })
+            .collect();
 
         if inputs.is_empty() {
             token_output.append_all(quote![
@@ -46,7 +55,9 @@ pub fn add_lua_functions(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
             ]);
         } else {
             token_output.append_all(quote![
-                let func = lua.create_function(|#(#inputs),*| { Ok( super::api::#ident (#(#input_names),*) )})?;
+                let func = lua.create_function(|_, (#(#input_names),*): (#(#input_types),*)| {
+                    Ok(super::api::#ident(#(#input_names),*))
+                })?;
                 ob_table.set(stringify!(#ident), func)?;
             ]);
         }
