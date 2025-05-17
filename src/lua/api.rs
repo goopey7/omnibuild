@@ -32,12 +32,9 @@ pub fn add_target(target: super::config::target_config::TargetConfig) {
     build_state!().targets.push(target);
 }
 
-pub fn cmd(cmd: Vec<String>) {
-    if cmd.is_empty() {
-        return;
-    }
-    std::process::Command::new(cmd.first().unwrap())
-        .args(&cmd[1..])
+pub fn cmd(cmd: String, args: Vec<String>) {
+    std::process::Command::new(cmd)
+        .args(&args[0..])
         .status()
         .unwrap();
 }
