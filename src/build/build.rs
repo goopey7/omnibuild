@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use crate::build::build_state::BUILD_STATE;
-use crate::cli::Cli;
 use crate::compiler::compiler::Compiler;
 
 fn run_assertions() {
@@ -37,7 +36,7 @@ fn gather_cpp_files(dir: &Path, files: &mut Vec<PathBuf>) {
     }
 }
 
-pub fn build<T: Compiler>(args: &Cli) {
+pub fn build<T: Compiler>() {
     run_assertions();
 
     let build_state = BUILD_STATE
@@ -54,18 +53,23 @@ pub fn build<T: Compiler>(args: &Cli) {
     let target = build_state
         .targets
         .iter()
-        .find(|target_config| target_config.name == args.build_target);
+        .find(|target_config| target_config.name == build_state.args.build_target);
     let target = target.expect("provided target not found!");
 
     let build_config = build_state
         .configs
         .iter()
-        .find(|build_config| build_config.name == args.build_config);
+        .find(|build_config| build_config.name == build_state.args.build_config);
     let build_config = build_config.expect("provided build configuration not found!");
 
     let mut compile_commands = vec![];
     build_state.modules.iter().for_each(|module| {
+        if module.path.is_none() {
+            return;
+        }
+
         let mut files = vec![];
+
         gather_cpp_files(
             Path::new(&module.path.as_ref().unwrap().clone()),
             &mut files,
@@ -87,9 +91,6 @@ pub fn build<T: Compiler>(args: &Cli) {
     });
     let compile_commands_json = serde_json::to_string_pretty(&compile_commands)
         .expect("unable to serialize compile commands to json!");
-    std::fs::write(
-        "compile_commands.json",
-        compile_commands_json,
-    )
-    .expect("failed to write compile_commands.json!");
+    std::fs::write("compile_commands.json", compile_commands_json)
+        .expect("failed to write compile_commands.json!");
 }

@@ -2,6 +2,7 @@
 #include <test.h>
 #include <runtime_sl.h>
 #include <print>
+#include <fmt/printf.h>
 
 int main()
 {
@@ -10,6 +11,8 @@ int main()
 
 	RuntimeStaticLib();
 	OtherRuntimeStaticLib();
+
+	fmt::println("hello from fmt!");
 
 	return 0;
 }

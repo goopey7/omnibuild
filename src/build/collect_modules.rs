@@ -1,10 +1,10 @@
 use crate::cli::Cli;
 use crate::build_state;
 
-pub fn collect_modules(lua: &mlua::Lua, args: &Cli) -> Result<(), mlua::Error>
+pub fn collect_modules(lua: &mlua::Lua) -> Result<(), mlua::Error>
 {
     let build_state = build_state!().clone();
-    let target = build_state.targets.iter().find(|target| target.name == args.build_target);
+    let target = build_state.targets.iter().find(|target| target.name == build_state.args.build_target);
     let target = target.expect("target not found");
 
     target.module_directories.iter().for_each(|module_dir| {
