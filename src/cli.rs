@@ -1,5 +1,5 @@
 /// Omnibuild is a dead simple build system for large scale C++ projects
-#[derive(clap::Parser)]
+#[derive(clap::Parser, Clone, Default)]
 #[command(version, about)]
 pub struct Cli {
     /// Directory containing project.lua

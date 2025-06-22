@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ModuleType {
     Dylib,
     Lib,
@@ -44,8 +44,8 @@ impl mlua::FromLua for ModuleConfig {
             Some(value) => Ok(ModuleConfig {
                 name: value.get("name")?,
                 r#type: value.get("type")?,
-                dependencies: value.get("dependencies")?,
-                include_dirs: value.get("include_dirs")?,
+                dependencies: value.get("dependencies").unwrap_or(Vec::new()),
+                include_dirs: value.get("include_dirs").unwrap_or(Vec::new()),
                 path: None,
             }),
             None => Err(mlua::Error::FromLuaConversionError {

@@ -1,6 +1,6 @@
-use std::sync::RwLock;
+use std::{path::PathBuf, sync::RwLock};
 
-use crate::lua::config::{target_config::TargetConfig, module_config::ModuleConfig, project_config::ProjectConfig, build_config::BuildConfig};
+use crate::{cli::Cli, lua::config::{build_config::BuildConfig, module_config::ModuleConfig, package_config::PackageConfig, project_config::ProjectConfig, target_config::TargetConfig}};
 use lazy_static::lazy_static;
 
 #[derive(Default, Clone)]
@@ -10,6 +10,9 @@ pub struct BuildState
     pub modules: Vec<ModuleConfig>,
     pub configs: Vec<BuildConfig>,
     pub targets: Vec<TargetConfig>,
+    pub repo_url: String,
+    pub args: Cli,
+    pub working_directory: PathBuf,
 }
 
 lazy_static! {

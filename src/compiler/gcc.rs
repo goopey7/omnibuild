@@ -109,16 +109,26 @@ impl Compiler for Gcc {
                 .iter()
                 .find(|module| module.name == *dep);
             let module_dep = module_dep.expect("could not find module dependency!");
-            let dep_path = module_dep.path.clone().unwrap();
-            let dep_path = dep_path.to_str().unwrap();
-            module_dep.include_dirs.iter().for_each(|dir| {
-                cmd.arg(format!(
-                    "{}{}/{}",
-                    Gcc::get_include_dir_prefix(),
-                    dep_path,
-                    dir
-                ));
-            });
+            if let Some(dep_path) = module_dep.path.clone() {
+                let dep_path = dep_path.to_str().unwrap();
+                module_dep.include_dirs.iter().for_each(|dir| {
+                    cmd.arg(format!(
+                        "{}{}/{}",
+                        Gcc::get_include_dir_prefix(),
+                        dep_path,
+                        dir
+                    ));
+                });
+            } else {
+                module_dep.include_dirs.iter().for_each(|dir| {
+                    cmd.arg(format!(
+                        "{}{}/{}",
+                        Gcc::get_include_dir_prefix(),
+                        format!(".packages/{}", &module_dep.name),
+                        dir
+                    ));
+                });
+            }
         });
 
         let module_path = module.path.clone().unwrap();
@@ -429,16 +439,26 @@ fn get_inc_build_file(module: &ModuleConfig, file: &PathBuf) -> IncBuildFile {
             .iter()
             .find(|module| module.name == *dep);
         let module_dep = module_dep.expect("could not find module dependency!");
-        let dep_path = module_dep.path.clone().unwrap();
-        let dep_path = dep_path.to_str().unwrap();
-        module_dep.include_dirs.iter().for_each(|dir| {
-            cmd.arg(format!(
-                "{}{}/{}",
-                Gcc::get_include_dir_prefix(),
-                dep_path,
-                dir
-            ));
-        });
+        if let Some(dep_path) = module_dep.path.clone() {
+            let dep_path = dep_path.to_str().unwrap();
+            module_dep.include_dirs.iter().for_each(|dir| {
+                cmd.arg(format!(
+                    "{}{}/{}",
+                    Gcc::get_include_dir_prefix(),
+                    dep_path,
+                    dir
+                ));
+            });
+        } else {
+            module_dep.include_dirs.iter().for_each(|dir| {
+                cmd.arg(format!(
+                    "{}{}/{}",
+                    Gcc::get_include_dir_prefix(),
+                    format!(".packages/{}", &module_dep.name),
+                    dir
+                ));
+            });
+        }
     });
 
     let output = cmd.output().unwrap();
@@ -475,16 +495,26 @@ fn update_inc_build_cache(module: &ModuleConfig, file: &PathBuf, output_dir: &Pa
             .iter()
             .find(|module| module.name == *dep);
         let module_dep = module_dep.expect("could not find module dependency!");
-        let dep_path = module_dep.path.clone().unwrap();
-        let dep_path = dep_path.to_str().unwrap();
-        module_dep.include_dirs.iter().for_each(|dir| {
-            cmd.arg(format!(
-                "{}{}/{}",
-                Gcc::get_include_dir_prefix(),
-                dep_path,
-                dir
-            ));
-        });
+        if let Some(dep_path) = module_dep.path.clone() {
+            let dep_path = dep_path.to_str().unwrap();
+            module_dep.include_dirs.iter().for_each(|dir| {
+                cmd.arg(format!(
+                    "{}{}/{}",
+                    Gcc::get_include_dir_prefix(),
+                    dep_path,
+                    dir
+                ));
+            });
+        } else {
+            module_dep.include_dirs.iter().for_each(|dir| {
+                cmd.arg(format!(
+                    "{}{}/{}",
+                    Gcc::get_include_dir_prefix(),
+                    format!(".packages/{}", &module_dep.name),
+                    dir
+                ));
+            });
+        }
     });
 
     let output = cmd.output().unwrap();
