@@ -1,4 +1,3 @@
-use crate::cli::Cli;
 use crate::build_state;
 
 pub fn collect_modules(lua: &mlua::Lua) -> Result<(), mlua::Error>

@@ -4,7 +4,6 @@ use super::module_config::ModuleType;
 pub struct PackageConfig {
     pub name: String,
     pub r#type: ModuleType,
-    pub dependencies: Vec<String>,
     pub include_dirs: Vec<String>,
     pub binary: String,
 }
@@ -15,7 +14,6 @@ impl mlua::FromLua for PackageConfig {
             Some(value) => Ok(PackageConfig {
                 name: value.get("name")?,
                 r#type: value.get("type")?,
-                dependencies: value.get("dependencies").unwrap_or(Vec::new()),
                 include_dirs: value.get("include_dirs").unwrap_or(Vec::new()),
                 binary: value.get("binary")?,
             }),
