@@ -43,7 +43,18 @@ pub fn add_target(target: super::config::target_config::TargetConfig) {
 }
 
 pub fn cmd(cmd: String, args: Vec<String>) {
+    if build_state!().is_running_package_lua {
+        println!("cmd not supported by package build.lua!");
+        std::process::exit(-1);
+    }
     std::process::Command::new(cmd)
+        .args(&args[0..])
+        .status()
+        .unwrap();
+}
+
+pub fn cmake(args: Vec<String>) {
+    std::process::Command::new("cmake")
         .args(&args[0..])
         .status()
         .unwrap();
@@ -62,6 +73,7 @@ pub fn add_package(package: super::config::package_config::PackageConfig) {
 
     println!("{}", &package.binary);
     println!("{}", &target.output_dir.to_str().unwrap());
+    std::fs::create_dir_all(build_state!().working_directory.join(&target.output_dir)).unwrap();
     std::fs::copy(
         package.binary,
         build_state!()
@@ -160,6 +172,8 @@ pub fn use_package(lua: &mlua::Lua, name: String, version: String) {
 
     let old_dir = std::env::current_dir().unwrap();
     std::env::set_current_dir(old_dir.join(format!(".packages/{}", name))).unwrap();
+    build_state!().is_running_package_lua = true;
     lua.load(build_lua).exec().unwrap();
+    build_state!().is_running_package_lua = false;
     std::env::set_current_dir(old_dir).unwrap();
 }

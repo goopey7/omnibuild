@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::RwLock};
 
-use crate::{cli::Cli, lua::config::{build_config::BuildConfig, module_config::ModuleConfig, package_config::PackageConfig, project_config::ProjectConfig, target_config::TargetConfig}};
+use crate::{cli::Cli, lua::config::{build_config::BuildConfig, module_config::ModuleConfig, project_config::ProjectConfig, target_config::TargetConfig}};
 use lazy_static::lazy_static;
 
 #[derive(Default, Clone)]
@@ -13,6 +13,7 @@ pub struct BuildState
     pub repo_url: String,
     pub args: Cli,
     pub working_directory: PathBuf,
+    pub is_running_package_lua: bool,
 }
 
 lazy_static! {
