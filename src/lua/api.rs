@@ -71,25 +71,31 @@ pub fn add_package(package: super::config::package_config::PackageConfig) {
             .clone()
     };
 
-    println!("{}", &package.binary);
+    println!("{:?}", &package.binary);
     println!("{}", &target.output_dir.to_str().unwrap());
     std::fs::create_dir_all(build_state!().working_directory.join(&target.output_dir)).unwrap();
-    std::fs::copy(
-        package.binary,
-        build_state!()
+
+    let binary_dir = package.binary.parent().unwrap();
+    let lib_pattern = binary_dir.join(format!("lib{}.*", package.name));
+
+    for entry in glob::glob(lib_pattern.to_str().unwrap()).unwrap() {
+        let src_path = entry.unwrap();
+        let filename = src_path.file_name().unwrap();
+        let dest_path = build_state!()
             .working_directory
             .join(&target.output_dir)
-            .join(format!(
-                "lib{}.{}",
-                package.name,
-                if package.r#type == ModuleType::Dylib {
-                    "so"
-                } else {
-                    "a"
-                }
-            )),
-    )
-    .unwrap();
+            .join(filename);
+
+        if src_path.is_symlink() {
+            let target = std::fs::read_link(&src_path).unwrap();
+            let _ = std::fs::remove_file(&dest_path);
+            std::os::unix::fs::symlink(&target, &dest_path).unwrap();
+        } else {
+            std::fs::copy(&src_path, &dest_path).unwrap();
+        }
+
+        std::fs::copy(&src_path, &dest_path).unwrap();
+    }
 
     let module = ModuleConfig {
         name: package.name,

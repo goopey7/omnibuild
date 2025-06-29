@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use super::module_config::ModuleType;
 
 #[derive(Debug, Clone)]
@@ -5,7 +7,7 @@ pub struct PackageConfig {
     pub name: String,
     pub r#type: ModuleType,
     pub include_dirs: Vec<String>,
-    pub binary: String,
+    pub binary: PathBuf,
 }
 
 impl mlua::FromLua for PackageConfig {
