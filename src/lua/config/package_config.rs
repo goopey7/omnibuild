@@ -5,7 +5,7 @@ use super::module_config::ModuleType;
 #[derive(Debug, Clone)]
 pub struct PackageConfig {
     pub name: String,
-    pub r#type: ModuleType,
+    pub r#type: Option<ModuleType>,
     pub include_dirs: Vec<String>,
     pub binary: PathBuf,
 }
@@ -15,7 +15,7 @@ impl mlua::FromLua for PackageConfig {
         match value.as_table() {
             Some(value) => Ok(PackageConfig {
                 name: value.get("name")?,
-                r#type: value.get("type")?,
+                r#type: value.get("type").unwrap_or(None),
                 include_dirs: value.get("include_dirs").unwrap_or(Vec::new()),
                 binary: value.get("binary")?,
             }),

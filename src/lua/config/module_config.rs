@@ -32,7 +32,7 @@ impl mlua::FromLua for ModuleType {
 #[derive(Debug, Clone)]
 pub struct ModuleConfig {
     pub name: String,
-    pub r#type: ModuleType,
+    pub r#type: Option<ModuleType>,
     pub dependencies: Vec<String>,
     pub include_dirs: Vec<String>,
     pub ignore_dirs: Vec<String>,
@@ -44,7 +44,7 @@ impl mlua::FromLua for ModuleConfig {
         match value.as_table() {
             Some(value) => Ok(ModuleConfig {
                 name: value.get("name")?,
-                r#type: value.get("type")?,
+                r#type: value.get("type").unwrap_or(None),
                 dependencies: value.get("dependencies").unwrap_or(Vec::new()),
                 include_dirs: value.get("include_dirs").unwrap_or(Vec::new()),
                 path: None,

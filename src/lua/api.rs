@@ -2,10 +2,7 @@ use git2::{ObjectType, Repository};
 
 use crate::{
     build_state,
-    lua::{
-        config::module_config::ModuleType, git_utils::fetch_package_files,
-        package_info::PackageInfo,
-    },
+    lua::{git_utils::fetch_package_files, package_info::PackageInfo},
 };
 
 use super::config::module_config::ModuleConfig;
@@ -75,26 +72,28 @@ pub fn add_package(package: super::config::package_config::PackageConfig) {
     println!("{}", &target.output_dir.to_str().unwrap());
     std::fs::create_dir_all(build_state!().working_directory.join(&target.output_dir)).unwrap();
 
-    let binary_dir = package.binary.parent().unwrap();
-    let lib_pattern = binary_dir.join(format!("lib{}.*", package.name));
+    if let Some(binary) = package.binary {
+        let binary_dir = binary.parent().unwrap();
+        let lib_pattern = binary_dir.join(format!("lib{}.*", package.name));
 
-    for entry in glob::glob(lib_pattern.to_str().unwrap()).unwrap() {
-        let src_path = entry.unwrap();
-        let filename = src_path.file_name().unwrap();
-        let dest_path = build_state!()
-            .working_directory
-            .join(&target.output_dir)
-            .join(filename);
+        for entry in glob::glob(lib_pattern.to_str().unwrap()).unwrap() {
+            let src_path = entry.unwrap();
+            let filename = src_path.file_name().unwrap();
+            let dest_path = build_state!()
+                .working_directory
+                .join(&target.output_dir)
+                .join(filename);
 
-        if src_path.is_symlink() {
-            let target = std::fs::read_link(&src_path).unwrap();
-            let _ = std::fs::remove_file(&dest_path);
-            std::os::unix::fs::symlink(&target, &dest_path).unwrap();
-        } else {
+            if src_path.is_symlink() {
+                let target = std::fs::read_link(&src_path).unwrap();
+                let _ = std::fs::remove_file(&dest_path);
+                std::os::unix::fs::symlink(&target, &dest_path).unwrap();
+            } else {
+                std::fs::copy(&src_path, &dest_path).unwrap();
+            }
+
             std::fs::copy(&src_path, &dest_path).unwrap();
         }
-
-        std::fs::copy(&src_path, &dest_path).unwrap();
     }
 
     let module = ModuleConfig {
@@ -102,6 +101,7 @@ pub fn add_package(package: super::config::package_config::PackageConfig) {
         r#type: package.r#type,
         include_dirs: package.include_dirs,
         dependencies: vec![],
+        ignore_dirs: vec![],
         path: None,
     };
 
@@ -137,7 +137,12 @@ pub fn use_package(lua: &mlua::Lua, name: String, version: String) {
 
     // Find the tag reference
     let tag_ref_name = format!("refs/tags/{}", version);
-    let tag_ref = repo.find_reference(&tag_ref_name).unwrap();
+    let tag_ref = repo
+        .find_reference(&tag_ref_name)
+        .unwrap_or_else(|_e: git2::Error| {
+            let tag_name = format!("refs/heads/{}", version);
+            repo.find_reference(&tag_name).unwrap()
+        });
 
     // Resolve the tag to get the target commit
     let target_oid = tag_ref.target().unwrap();

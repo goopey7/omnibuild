@@ -147,11 +147,13 @@ impl Compiler for Gcc {
             cmd.arg(Gcc::get_debug_symbols());
         }
 
-        match module.r#type {
-            ModuleType::Dylib => {
-                cmd.arg("-fPIC");
+        if let Some(r#type) = &module.r#type {
+            match r#type {
+                ModuleType::Dylib => {
+                    cmd.arg("-fPIC");
+                }
+                _ => {}
             }
-            _ => {}
         }
 
         cmd.arg(Gcc::input_src_file_prefix());
@@ -212,7 +214,12 @@ impl Compiler for Gcc {
             .expect("failed to get read on build_state");
 
         let output_dir = target_config.output_dir.clone();
-        let output_path = match module.r#type {
+        if module.r#type.is_none() {
+            return;
+        }
+
+        let r#type = module.r#type.as_ref().unwrap();
+        let output_path = match r#type {
             ModuleType::Lib => output_dir.join(format!("lib{}.a", module.name)),
             ModuleType::Dylib => output_dir.join(format!("lib{}.so", module.name)),
             ModuleType::Exe => output_dir.join(&module.name),
@@ -247,18 +254,20 @@ impl Compiler for Gcc {
                 );
             }
 
-            match dep.r#type {
-                ModuleType::Lib => {
-                    static_libs.push(output_dir.join(format!("lib{}.a", dep.name)));
+            if let Some(r#type) = &dep.r#type {
+                match r#type {
+                    ModuleType::Lib => {
+                        static_libs.push(output_dir.join(format!("lib{}.a", dep.name)));
+                    }
+                    ModuleType::Dylib => {
+                        dynamic_libs.push(dep.name.clone());
+                    }
+                    _ => {}
                 }
-                ModuleType::Dylib => {
-                    dynamic_libs.push(dep.name.clone());
-                }
-                _ => {}
             }
         }
 
-        match module.r#type {
+        match r#type {
             ModuleType::Lib => {
                 let mut cmd = Command::new("ar");
                 cmd.arg("rcs");
