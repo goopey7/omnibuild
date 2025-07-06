@@ -47,8 +47,8 @@ impl mlua::FromLua for ModuleConfig {
                 r#type: value.get("type").unwrap_or(None),
                 dependencies: value.get("dependencies").unwrap_or(Vec::new()),
                 include_dirs: value.get("include_dirs").unwrap_or(Vec::new()),
-                path: None,
                 ignore_dirs: value.get("ignore_dirs").unwrap_or(Vec::new()),
+                path: value.get("path").unwrap_or(None),
             }),
             None => Err(mlua::Error::FromLuaConversionError {
                 from: "table",

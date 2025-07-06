@@ -7,7 +7,7 @@ pub struct PackageConfig {
     pub name: String,
     pub r#type: Option<ModuleType>,
     pub include_dirs: Vec<String>,
-    pub binary: PathBuf,
+    pub binary: Option<PathBuf>,
 }
 
 impl mlua::FromLua for PackageConfig {
@@ -17,7 +17,7 @@ impl mlua::FromLua for PackageConfig {
                 name: value.get("name")?,
                 r#type: value.get("type").unwrap_or(None),
                 include_dirs: value.get("include_dirs").unwrap_or(Vec::new()),
-                binary: value.get("binary")?,
+                binary: value.get("binary").unwrap_or(None),
             }),
             None => Err(mlua::Error::FromLuaConversionError {
                 from: "table",
