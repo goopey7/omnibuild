@@ -17,7 +17,7 @@ fn main() -> Result<(), mlua::Error> {
     build_state!().working_directory = std::env::current_dir().unwrap();
 
     let lua = mlua::Lua::new();
-    init_globals(&lua)?;
+    init_globals(&lua, &build_state!().args.build_target)?;
 
     let init_file_read = std::fs::read_to_string("init.lua").expect("no init.lua found!");
     lua.load(init_file_read).exec()?;
