@@ -35,6 +35,7 @@ pub struct ModuleConfig {
     pub r#type: ModuleType,
     pub dependencies: Vec<String>,
     pub include_dirs: Vec<String>,
+    pub ignore_dirs: Vec<String>,
     pub path: Option<PathBuf>,
 }
 
@@ -47,6 +48,7 @@ impl mlua::FromLua for ModuleConfig {
                 dependencies: value.get("dependencies").unwrap_or(Vec::new()),
                 include_dirs: value.get("include_dirs").unwrap_or(Vec::new()),
                 path: None,
+                ignore_dirs: value.get("ignore_dirs").unwrap_or(Vec::new()),
             }),
             None => Err(mlua::Error::FromLuaConversionError {
                 from: "table",

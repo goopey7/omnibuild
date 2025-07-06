@@ -23,12 +23,29 @@ fn run_assertions() {
     );
 }
 
-fn gather_cpp_files(dir: &Path, files: &mut Vec<PathBuf>) {
+fn gather_cpp_files(dir: &Path, files: &mut Vec<PathBuf>, ignore_dirs: &Vec<String>) {
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                gather_cpp_files(&path, files);
+                let mut should_ignore = false;
+                for ignore_dir in ignore_dirs {
+                    let ignore_name = Path::new(ignore_dir)
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or(ignore_dir);
+
+                    if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
+                        if dir_name == ignore_name {
+                            should_ignore = true;
+                            break;
+                        }
+                    }
+                }
+                if should_ignore {
+                    continue;
+                }
+                gather_cpp_files(&path, files, ignore_dirs);
             } else if path.extension().map_or(false, |ext| ext == "cpp") {
                 files.push(path);
             }
@@ -73,6 +90,7 @@ pub fn build<T: Compiler>() {
         gather_cpp_files(
             Path::new(&module.path.as_ref().unwrap().clone()),
             &mut files,
+            &module.ignore_dirs,
         );
 
         files.iter().for_each(|file| {
